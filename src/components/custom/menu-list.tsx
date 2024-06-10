@@ -62,7 +62,7 @@ function MenuList() {
             {menu.name}
             </TableCell>
             <TableCell>{menu.category}</TableCell>
-            <TableCell>{menu.price.toFixed(2)}</TableCell>
+            <TableCell>{menu.price}</TableCell>
             <TableCell>
             <DropdownMenu>
             <DropdownMenuTrigger asChild>

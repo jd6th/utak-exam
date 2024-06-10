@@ -27,6 +27,10 @@ import {
 import { Input } from "@/components/ui/input"
 import { PlusCircle } from "lucide-react"
 import { z } from "zod"
+import { useState } from "react"
+import { useToast } from "@/components/ui/use-toast"
+import { cn } from "@/lib/utils"
+import useDataApi from "@/api/postData"
 
 
 const formSchema = z.object({
@@ -39,17 +43,43 @@ const formSchema = z.object({
   })
 
 export function MenuForm() {
+  const [open, setOpen] = useState(false);
+  const [category, setCategory] = useState<string>('');
+  const { toast } = useToast()
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const {saveData} = useDataApi('/api/menu-add'); 
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema)
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log(values);
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    const res = await saveData(values);
+    setOpen(false);
+
+    if(res?.error) {
+        toast({
+            title: "Error",
+            description: "Something went wrong!!!",
+            className: cn(
+                'top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4'
+                ),
+            variant: 'destructive'
+        })
+    } else {
+        toast({
+            title: "Menu added",
+            description: "Successfully added new menu!",
+            className: cn(
+                'top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4 bg-emerald-400'
+                ),
+        })
+    }
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="flex items-center gap-2">
         <PlusCircle className="h-3.5 w-3.5" />
@@ -88,7 +118,13 @@ export function MenuForm() {
                                 render={({field}) => (
                                     <FormItem >
                                         <FormLabel>Category</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select 
+                                            onValueChange={(value) => {
+                                                setCategory(value)
+                                                form.setValue('category', value)
+                                            }}
+                                            value={category}
+                                        >
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="category" />
