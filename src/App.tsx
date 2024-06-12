@@ -6,52 +6,75 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { MenuForm } from "./components/custom/menu-form"
-import MenuList from "./components/custom/menu-list"
 import { Toaster } from "./components/ui/toaster"
+import { Menu, columns } from "./components/dataTable/columns"
+import { DataTable } from "./components/dataTable/data-table"
+import { useEffect, useState } from "react"
 
 function App() {
+  const [data, setData] = useState<Menu[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<unknown | null>(null);
+  const [menuSelected, setMenuSelected] = useState<any>(undefined);
+  const [open, setOpen] = useState(false);
+  const [dialogTitle, setDialogTitle] = useState('Add Game')
+
+    useEffect(() => {
+      const fetchData = async () => {
+        try {
+          const response = await fetch('/api/get-list');
+          if(!response.ok) {
+            throw new Error('Network response is not ok');
+          }
+          const data = await response.json();
+  
+          console.log(data);
+          setData(data);
+        }  catch (error) {
+          console.log(error);
+          setError(error);
+        } finally {
+          setLoading(false);
+        }
+      }
+      fetchData();
+    },[])
+
+
+    useEffect(() => {
+      if (menuSelected && (Object.prototype.hasOwnProperty.call(menuSelected, 'id'))){ 
+        console.log(menuSelected)
+      }
+    },[menuSelected, open])
+
   return (
     <>
       <div className="container mx-auto flex-1 py-10">
         <div className="ml-auto flex items-center gap-2">
-          {/* <Button size="sm" className="h-7 gap-1">
-            <PlusCircle className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-              Add Product
-            </span>
-          </Button> */}
-          <MenuForm />
+           <MenuForm 
+            open={open}
+            setOpen={setOpen}
+            menu={menuSelected}
+            dialogTitle={dialogTitle}
+           />
         </div>
-
         <div className="mt-[20px]">
           <Card>
             <CardHeader>
               <CardTitle>Menu List</CardTitle>
             </CardHeader> 
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>
-                      <span className="sr-only">Actions</span>
-                    </TableHead>                
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                    <MenuList />
-                </TableBody>
-              </Table>
+              {loading && <p>Loading...</p>}
+              {!loading && (
+                <DataTable 
+                  columns={columns} 
+                  data={data}
+                  setItemSelected={setMenuSelected}
+                  setOpen={setOpen}
+                  setDialogTitle={setDialogTitle}
+                />
+              )}
             </CardContent> 
             <CardFooter>
               <div className="text-xs text-muted-foreground">

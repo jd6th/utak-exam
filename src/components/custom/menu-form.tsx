@@ -27,11 +27,27 @@ import {
 import { Input } from "@/components/ui/input"
 import { PlusCircle } from "lucide-react"
 import { z } from "zod"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 import useDataApi from "@/api/postData"
 
+interface Menu  {
+  id: string
+  name: string
+  category: string
+  serving: string
+  price: string
+  cost: string
+  stock: string
+}
+
+interface MenuDialogProps {
+    open: boolean;
+    setOpen: (arg0: boolean) => void;
+    menu: Menu;
+    dialogTitle: string;
+}
 
 const formSchema = z.object({
     name: z.string().min(6).max(50),
@@ -42,19 +58,24 @@ const formSchema = z.object({
     stock: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid amount format"),
   })
 
-export function MenuForm() {
+export function MenuForm(props: MenuDialogProps) {
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<string>('');
   const { toast } = useToast()
+  const {menu} = props
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const {saveData} = useDataApi('/api/menu-add'); 
 
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema)
+    resolver: zodResolver(formSchema),
   });
 
+  const { setValue, reset } = form;
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    console.log("values:::", values)
+    return
     const res = await saveData(values);
     setOpen(false);
 
@@ -77,6 +98,37 @@ export function MenuForm() {
         })
     }
   };
+
+
+  useEffect(() => {
+    setOpen(props.open)
+    if(menu) {
+        setValue('name', menu.name)
+        setValue('category', menu.category)
+        setValue('serving', menu.serving)
+        setValue('price', menu.price)
+        setValue('cost', menu.cost)
+        setValue('stock', menu.stock)
+    }
+    console.log("edit:::", menu)
+  },[menu, setValue, props.open]);
+
+
+  useEffect(() => {
+    if (!props.open) {
+        reset(
+            { 
+                name: '',
+                category: '',
+                serving: '',
+                price: '',
+                cost: '',
+                stock: ''
+            }
+        ); // Reset the form fields when the dialog is closed
+    }
+}, [props.open, reset]);
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -103,7 +155,11 @@ export function MenuForm() {
                                 <FormItem>
                                     <FormLabel>Name</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="menu name" {...field} />
+                                        <Input 
+                                            placeholder="menu name" 
+                                            {...field}
+                                            value={props.menu ? props.menu.name : ''}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
